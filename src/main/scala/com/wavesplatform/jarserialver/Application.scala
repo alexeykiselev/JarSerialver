@@ -42,7 +42,6 @@ object Application extends App {
           if (uidOption.isDefined && uidOption.get != 0) println(s"$c: ${uidOption.get}L")
         })
       case None =>
-        parser.showTryHelp()
     }
   }
 
