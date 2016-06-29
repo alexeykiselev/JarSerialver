@@ -25,13 +25,16 @@ object Application extends App {
       opt[String]('c', "classpath") required() valueName "<classpath>" action { (x, c) =>
         c.copy(classpath = x)
       } text "classpath to look for jar and dependencies"
+      opt[Unit]('a', "ignore") action { (_, c) =>
+        c.copy(ignoreAnonymousClasses = true)
+      } text "ignore anonymous classes"
       help("help") text "display this help message"
     }
 
     parser.parse(args, ApplicationConfiguration()) match {
       case Some(config) =>
         val classLoader = getClassLoader(config.classpath)
-        val classes = getJarEntries(config.jarFile, config.packageName)
+        val classes = getJarEntries(config.jarFile, config.packageName, config.ignoreAnonymousClasses)
 
 
         classes.foreach(c => {
@@ -43,11 +46,12 @@ object Application extends App {
     }
   }
 
-  def getJarEntries(jarFile: File, packageName: String): Seq[String] = {
+  def getJarEntries(jarFile: File, packageName: String, ignoreAnonymous: Boolean): Seq[String] = {
     val jar = new JarFile(jarFile)
 
     jar.entries.asScala.map(e => e.getName)
       .filter(n => n.endsWith(".class"))
+      .filter(n => (!ignoreAnonymous || !n.contains('$')))
       .map(n => n.replace('/', '.'))
       .filter(n => n.startsWith(packageName))
       .map(n => n.substring(0, n.lastIndexOf(".class"))).toSeq
